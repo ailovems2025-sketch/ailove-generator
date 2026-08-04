@@ -65,7 +65,6 @@ custom_css = f"""
     h1, h2, h3 {{ color: #00FFFF !important; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }}
     p, label {{ color: #B0C4DE !important; font-weight: bold; }}
     
-    /* PERBAIKAN WARNA INPUT PARAMETER PROYEK (HITAM KONTRAS) */
     .stTextArea>div>div>textarea {{ 
         background-color: #F0F8FF !important; 
         color: #000000 !important; 
@@ -74,7 +73,6 @@ custom_css = f"""
         font-size: 16px !important;
     }}
     
-    /* INPUT API KEY TETAP TEMA CYBERPUNK */
     .stTextInput>div>div>input {{ 
         background-color: rgba(0,0,0,0.5) !important; 
         color: #00FFFF !important; 
@@ -104,7 +102,6 @@ custom_css = f"""
         border: 1px solid #FF00FF;
     }}
     
-    /* PERBAIKAN TAMPILAN KODE PROMPT AGAR TOMBOL COPY MAKIN JELAS */
     div[data-testid="stCodeBlock"] {{ 
         background-color: rgba(10, 10, 25, 0.9) !important; 
         border: 1px solid #00FFFF; 
@@ -155,7 +152,7 @@ st.markdown(f"""
     <div style='text-align: center; margin-bottom: 30px;'>
         {logo_html}
         <h1 style='margin-bottom: 0px;'>AiLove Generator</h1>
-        <p style='color: #00FFFF; font-family: monospace; font-size: 14px; letter-spacing: 3px; margin-top: 5px;'>VERSION 1.1 BETA</p>
+        <p style='color: #00FFFF; font-family: monospace; font-size: 14px; letter-spacing: 3px; margin-top: 5px;'>VERSION 1.2 BETA - VEO 3.1 OPTIMIZED</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -184,7 +181,7 @@ with col_center:
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. LOGIKA AI & GENERASI (SISTEM ANTI-ERROR)
+# 5. LOGIKA AI & GENERASI
 # ==========================================
 if generate_btn:
     if not api_key:
@@ -204,22 +201,23 @@ if generate_btn:
         try:
             genai.configure(api_key=api_key)
             
+            # PERBAIKAN: Menggabungkan instruksi audio ke dalam prompt video untuk Veo 3.1
             system_instruction = f"""
             Kamu adalah sutradara AI yang sangat ketat dan logis. Pecah proses pembangunan menjadi {num_frames} frame.
             Frame 1 = 0%, Frame {num_frames} = 100%. Hitung persentase secara merata.
 
             ATURAN KONSISTENSI MUTLAK:
             1. Tentukan SATU sudut kamera, SATU kondisi pencahayaan, dan SATU latar belakang lingkungan (tidak boleh berubah).
-            2. Gunakan gaya bahasa deskriptif untuk Midjourney, dan pastikan diakhiri dengan --ar {rasio}
-            3. AUDIO ASMR KUNCI: Untuk setiap frame, hasilkan prompt efek suara (SFX) ASMR yang spesifik. Harus selalu menyertakan suara alam (angin, burung, dsb) DITAMBAH suara material/peralatan konstruksi yang sesuai dengan progres (contoh: bor listrik, palu memukul paku, gergaji memotong papan kayu, suara bambu, dsb).
+            2. Gunakan gaya bahasa deskriptif untuk Midjourney pada 'prompt_gambar', dan pastikan diakhiri dengan --ar {rasio}
+            3. PROMPT VIDEO & AUDIO UNTUK VEO 3.1: Untuk bagian transisi (video), gabungkan instruksi visual dan audio ke dalam satu prompt bahasa Inggris yang dioptimalkan untuk Veo 3.1. Deskripsikan pergerakan kamera, aksi progres pembangunan yang sedang terjadi, DAN secara eksplisit tuliskan panduan audio ASMR-nya (contoh: "Cinematic pan right showing wooden logs being stacked rapidly. Ambient sound of a morning forest with birds chirping, accompanied by the clear ASMR sound of a hand saw cutting wood and a hammer hitting nails.").
             
             BALAS HANYA DENGAN JSON:
             {{
               "frames": [
-                {{"frame": 1, "persen": "0%", "prompt_gambar": "prompt gambar...", "prompt_audio": "ASMR SFX: suara alam, memotong kayu..."}}
+                {{"frame": 1, "persen": "0%", "prompt_gambar": "prompt gambar statis untuk Midjourney..."}}
               ],
               "transitions": [
-                {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "prompt transisi kamera..."}}
+                {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "Prompt video Veo 3.1 yang berisi visual transisi sekaligus deskripsi audio ASMR..."}}
               ]
             }}
             """
@@ -232,7 +230,6 @@ if generate_btn:
             
             response_text = None
             
-            # KEMBALI MENGGUNAKAN PELACAK OTOMATIS AGAR TIDAK ERROR 404
             for m in genai.list_models():
                 if 'generateContent' in m.supported_generation_methods:
                     try:
@@ -252,19 +249,19 @@ if generate_btn:
                 monitor_space.empty()
                 
                 with col_center.container():
-                    st.markdown("### 📸 IMAGE KEYFRAMES & AUDIO ASMR")
+                    st.markdown("### 📸 IMAGE KEYFRAMES (MIDJOURNEY)")
                     for f in data.get('frames', []):
                         st.markdown(f"<span style='color:#00FFFF; font-size: 18px; font-weight: bold;'>► Frame {f['frame']} [{f['persen']}]</span>", unsafe_allow_html=True)
-                        st.markdown("<small style='color:lightgray;'>Salin Prompt Gambar (Midjourney/DALL-E):</small>", unsafe_allow_html=True)
+                        st.markdown("<small style='color:lightgray;'>Salin Prompt Gambar:</small>", unsafe_allow_html=True)
                         st.code(f['prompt_gambar'], language="text")
-                        st.markdown("<small style='color:lightgreen;'>Salin Prompt Audio ASMR (ElevenLabs/Suno):</small>", unsafe_allow_html=True)
-                        st.code(f['prompt_audio'], language="text")
                         st.markdown("<hr style='border-color: #4B0082; margin: 10px 0;'>", unsafe_allow_html=True)
                     
-                    st.markdown("<br>### 🎞️ VIDEO TRANSITIONS", unsafe_allow_html=True)
+                    st.markdown("<br>### 🎞️ VIDEO & AUDIO TRANSITIONS (VEO 3.1)", unsafe_allow_html=True)
                     for t in data.get('transitions', []):
                         st.markdown(f"<span style='color:#FF00FF; font-size: 16px; font-weight: bold;'>► Transisi {t['dari_frame']} ➔ {t['ke_frame']}</span>", unsafe_allow_html=True)
+                        st.markdown("<small style='color:lightgreen;'>Salin Prompt Visual + Audio (Veo 3.1):</small>", unsafe_allow_html=True)
                         st.code(t['prompt_video'], language="text")
+                        st.markdown("<br>", unsafe_allow_html=True)
             else:
                 monitor_space.error("SERVER DISCONNECTED: Tidak ada model AI yang cocok dengan input ini.")
                 
