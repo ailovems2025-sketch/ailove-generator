@@ -27,7 +27,6 @@ def get_base64_of_bin_file(bin_file):
     except Exception:
         return None
 
-# Memuat Background
 bg_file = "AI_Timelapse_app_background_design_202608031806.jpeg"
 bg_base64 = get_base64_of_bin_file(bg_file)
 
@@ -36,7 +35,6 @@ if bg_base64:
 else:
     bg_css = "background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);"
 
-# Memuat Logo dengan format PNG
 logo_file = "Logo App.png"
 logo_base64 = get_base64_of_bin_file(logo_file)
 
@@ -64,20 +62,31 @@ custom_css = f"""
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }}
     
-    div[data-testid="column"]:nth-child(2) {{
-        background: rgba(10, 10, 20, 0.2);
-        border: 1px solid rgba(150, 200, 255, 0.1);
-    }}
-
     h1, h2, h3 {{ color: #00FFFF !important; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }}
-    p, label {{ color: #B0C4DE !important; }}
+    p, label {{ color: #B0C4DE !important; font-weight: bold; }}
     
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea {{ 
+    /* PERBAIKAN WARNA INPUT PARAMETER PROYEK (HITAM KONTRAS) */
+    .stTextArea>div>div>textarea {{ 
+        background-color: #F0F8FF !important; 
+        color: #000000 !important; 
+        border: 2px solid #00FFFF !important; 
+        font-weight: bold !important;
+        font-size: 16px !important;
+    }}
+    
+    /* INPUT API KEY TETAP TEMA CYBERPUNK */
+    .stTextInput>div>div>input {{ 
         background-color: rgba(0,0,0,0.5) !important; 
         color: #00FFFF !important; 
         border: 1px solid #4B0082 !important; 
     }}
     
+    div[data-testid="stForm"] {{
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+    }}
+
     .stButton>button {{ 
         background: linear-gradient(90deg, #4B0082 0%, #8A2BE2 100%) !important; 
         color: white !important; 
@@ -88,14 +97,16 @@ custom_css = f"""
         padding: 15px;
         box-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
         transition: 0.3s;
+        margin-top: 15px;
     }}
     .stButton>button:hover {{ 
         box-shadow: 0 0 25px rgba(0, 255, 255, 0.8); 
         border: 1px solid #FF00FF;
     }}
     
+    /* PERBAIKAN TAMPILAN KODE PROMPT AGAR TOMBOL COPY MAKIN JELAS */
     div[data-testid="stCodeBlock"] {{ 
-        background-color: rgba(0, 0, 0, 0.6) !important; 
+        background-color: rgba(10, 10, 25, 0.9) !important; 
         border: 1px solid #00FFFF; 
         border-radius: 8px; 
     }}
@@ -135,7 +146,6 @@ def extract_json(text):
 # ==========================================
 # 4. TATA LETAK UTAMA (HEADER & GRID)
 # ==========================================
-# Menampilkan Logo, Judul, dan Versi
 if logo_base64:
     logo_html = f"<img src='data:image/png;base64,{logo_base64}' width='120' style='margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.3));'>"
 else:
@@ -145,7 +155,7 @@ st.markdown(f"""
     <div style='text-align: center; margin-bottom: 30px;'>
         {logo_html}
         <h1 style='margin-bottom: 0px;'>AiLove Generator</h1>
-        <p style='color: #00FFFF; font-family: monospace; font-size: 14px; letter-spacing: 3px; margin-top: 5px;'>VERSION 1.0 BETA</p>
+        <p style='color: #00FFFF; font-family: monospace; font-size: 14px; letter-spacing: 3px; margin-top: 5px;'>VERSION 1.1 BETA</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -154,14 +164,16 @@ col_left, col_center, col_right = st.columns([1.2, 2.5, 1.2], gap="large")
 with col_left:
     st.markdown("### 🎛️ DATA INPUT")
     api_key = st.text_input("🔑 API Key Token", type="password")
-    ide_teks = st.text_area("📝 Parameter Proyek", height=150, placeholder="Masukkan ide atau konsep bangunan...")
+    ide_teks = st.text_area("📝 Parameter Proyek", height=150, placeholder="Masukkan ide atau konsep bangunan... (Teks hitam)")
 
 with col_right:
     st.markdown("### ⚙️ SYSTEM CONTROL")
-    num_frames = st.slider("Target Frames (0-100%)", min_value=2, max_value=10, value=5)
-    foto_akhir = st.file_uploader("🖼️ Visual Override (Opsional)", type=['jpg', 'jpeg', 'png'])
-    st.markdown("<br>", unsafe_allow_html=True)
-    generate_btn = st.button("INITIATE GENERATOR 🚀")
+    # PERBAIKAN: Menggunakan Form agar slider tidak merespons otomatis saat bergeser
+    with st.form("kontrol_form"):
+        rasio = st.selectbox("📺 Aspek Rasio", ["16:9", "9:16", "4:3", "1:1"])
+        num_frames = st.slider("Target Frames (0-100%)", min_value=2, max_value=10, value=5)
+        foto_akhir = st.file_uploader("🖼️ Visual Override (Opsional)", type=['jpg', 'jpeg', 'png'])
+        generate_btn = st.form_submit_button("INITIATE GENERATOR 🚀")
 
 with col_center:
     monitor_space = st.empty()
@@ -173,7 +185,7 @@ with col_center:
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. LOGIKA AI (DENGAN KUNCI KONSISTENSI)
+# 5. LOGIKA AI & GENERASI (LEBIH CEPAT)
 # ==========================================
 if generate_btn:
     if not api_key:
@@ -193,23 +205,26 @@ if generate_btn:
         try:
             genai.configure(api_key=api_key)
             
+            # PERBAIKAN: Menggunakan model 1.5 Flash agar generasi jauh lebih cepat
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            
+            # PERBAIKAN: Memasukkan Aspek Rasio dan Kunci Audio ASMR
             system_instruction = f"""
             Kamu adalah sutradara AI yang sangat ketat dan logis. Pecah proses pembangunan menjadi {num_frames} frame.
             Frame 1 = 0%, Frame {num_frames} = 100%. Hitung persentase secara merata.
 
             ATURAN KONSISTENSI MUTLAK:
-            1. Tentukan SATU sudut kamera (misal: wide shot, tripod level), SATU kondisi pencahayaan, dan SATU latar belakang lingkungan.
-            2. Lingkungan, sudut kamera, dan cuaca TIDAK BOLEH BERUBAH dari frame 1 sampai frame akhir. 
-            3. Yang boleh berubah HANYA progres fisik bangunannya saja (dari pondasi hingga selesai).
-            4. Gunakan gaya bahasa deskriptif untuk Midjourney.
+            1. Tentukan SATU sudut kamera, SATU kondisi pencahayaan, dan SATU latar belakang lingkungan (tidak boleh berubah).
+            2. Gunakan gaya bahasa deskriptif untuk Midjourney, dan pastikan diakhiri dengan --ar {rasio}
+            3. AUDIO ASMR KUNCI: Untuk setiap frame, hasilkan prompt efek suara (SFX) ASMR yang spesifik. Harus selalu menyertakan suara alam (angin, burung, dsb) DITAMBAH suara material/peralatan konstruksi yang sesuai dengan progres (contoh: bor listrik, palu memukul paku, gergaji memotong papan kayu, suara bambu, dsb).
             
             BALAS HANYA DENGAN JSON:
             {{
               "frames": [
-                {{"frame": 1, "persen": "0%", "prompt_gambar": "prompt..."}}
+                {{"frame": 1, "persen": "0%", "prompt_gambar": "prompt gambar...", "prompt_audio": "ASMR SFX: suara alam, memotong kayu..."}}
               ],
               "transitions": [
-                {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "prompt..."}}
+                {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "prompt transisi kamera..."}}
               ]
             }}
             """
@@ -217,44 +232,31 @@ if generate_btn:
             input_data = [system_instruction]
             if ide_teks: input_data.append(f"Konsep: {ide_teks}")
             if foto_akhir:
-                input_data.append("Gunakan gambar ini untuk Frame 100%.")
+                input_data.append("Gunakan referensi gambar ini untuk wujud final Frame 100%.")
                 input_data.append(Image.open(foto_akhir))
             
-            response_text = None
-            for m in genai.list_models():
-                if 'generateContent' in m.supported_generation_methods:
-                    try:
-                        model = genai.GenerativeModel(m.name)
-                        response = model.generate_content(
-                            input_data,
-                            generation_config=genai.types.GenerationConfig(temperature=0.1)
-                        )
-                        response_text = response.text
-                        break 
-                    except Exception:
-                        continue
+            response = model.generate_content(
+                input_data,
+                generation_config=genai.types.GenerationConfig(temperature=0.2)
+            )
             
-            if response_text:
-                data = extract_json(response_text)
+            data = extract_json(response.text)
+            monitor_space.empty()
+            
+            with col_center.container():
+                st.markdown("### 📸 IMAGE KEYFRAMES & AUDIO ASMR")
+                for f in data.get('frames', []):
+                    st.markdown(f"<span style='color:#00FFFF; font-size: 18px; font-weight: bold;'>► Frame {f['frame']} [{f['persen']}]</span>", unsafe_allow_html=True)
+                    st.markdown("<small style='color:lightgray;'>Salin Prompt Gambar (Midjourney/DALL-E):</small>", unsafe_allow_html=True)
+                    st.code(f['prompt_gambar'], language="text")
+                    st.markdown("<small style='color:lightgreen;'>Salin Prompt Audio ASMR (ElevenLabs/Suno):</small>", unsafe_allow_html=True)
+                    st.code(f['prompt_audio'], language="text")
+                    st.markdown("<hr style='border-color: #4B0082; margin: 10px 0;'>", unsafe_allow_html=True)
                 
-                monitor_space.empty()
-                
-                with col_center.container():
-                    st.markdown("### 📸 IMAGE KEYFRAMES")
-                    img_cols = st.columns(2)
-                    for idx, f in enumerate(data.get('frames', [])):
-                        with img_cols[idx % 2]:
-                            st.markdown(f"<span style='color:#00FFFF;'>► Frame {f['frame']} [{f['persen']}]</span>", unsafe_allow_html=True)
-                            st.code(f['prompt_gambar'], language="text")
+                st.markdown("<br>### 🎞️ VIDEO TRANSITIONS", unsafe_allow_html=True)
+                for t in data.get('transitions', []):
+                    st.markdown(f"<span style='color:#FF00FF; font-size: 16px; font-weight: bold;'>► Transisi {t['dari_frame']} ➔ {t['ke_frame']}</span>", unsafe_allow_html=True)
+                    st.code(t['prompt_video'], language="text")
                     
-                    st.markdown("<br>### 🎞️ VIDEO TRANSITIONS", unsafe_allow_html=True)
-                    vid_cols = st.columns(2)
-                    for idx, t in enumerate(data.get('transitions', [])):
-                        with vid_cols[idx % 2]:
-                            st.markdown(f"<span style='color:#FF00FF;'>► Transisi {t['dari_frame']} ➔ {t['ke_frame']}</span>", unsafe_allow_html=True)
-                            st.code(t['prompt_video'], language="text")
-            else:
-                monitor_space.error("SERVER DISCONNECTED.")
-                
         except Exception as e:
-            monitor_space.error(f"FATAL ERROR: {e}")
+            monitor_space.error(f"FATAL ERROR: Pastikan API Key valid atau coba beberapa saat lagi. Detail: {e}")
