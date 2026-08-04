@@ -168,7 +168,6 @@ with col_left:
 
 with col_right:
     st.markdown("### ⚙️ SYSTEM CONTROL")
-    # PERBAIKAN: Menggunakan Form agar slider tidak merespons otomatis saat bergeser
     with st.form("kontrol_form"):
         rasio = st.selectbox("📺 Aspek Rasio", ["16:9", "9:16", "4:3", "1:1"])
         num_frames = st.slider("Target Frames (0-100%)", min_value=2, max_value=10, value=5)
@@ -185,7 +184,7 @@ with col_center:
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. LOGIKA AI & GENERASI (LEBIH CEPAT)
+# 5. LOGIKA AI & GENERASI (SISTEM ANTI-ERROR)
 # ==========================================
 if generate_btn:
     if not api_key:
@@ -205,10 +204,6 @@ if generate_btn:
         try:
             genai.configure(api_key=api_key)
             
-            # PERBAIKAN: Menggunakan model 1.5 Flash agar generasi jauh lebih cepat
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            
-            # PERBAIKAN: Memasukkan Aspek Rasio dan Kunci Audio ASMR
             system_instruction = f"""
             Kamu adalah sutradara AI yang sangat ketat dan logis. Pecah proses pembangunan menjadi {num_frames} frame.
             Frame 1 = 0%, Frame {num_frames} = 100%. Hitung persentase secara merata.
@@ -235,28 +230,43 @@ if generate_btn:
                 input_data.append("Gunakan referensi gambar ini untuk wujud final Frame 100%.")
                 input_data.append(Image.open(foto_akhir))
             
-            response = model.generate_content(
-                input_data,
-                generation_config=genai.types.GenerationConfig(temperature=0.2)
-            )
+            response_text = None
             
-            data = extract_json(response.text)
-            monitor_space.empty()
+            # KEMBALI MENGGUNAKAN PELACAK OTOMATIS AGAR TIDAK ERROR 404
+            for m in genai.list_models():
+                if 'generateContent' in m.supported_generation_methods:
+                    try:
+                        model = genai.GenerativeModel(m.name)
+                        response = model.generate_content(
+                            input_data,
+                            generation_config=genai.types.GenerationConfig(temperature=0.2)
+                        )
+                        response_text = response.text
+                        break 
+                    except Exception:
+                        continue
             
-            with col_center.container():
-                st.markdown("### 📸 IMAGE KEYFRAMES & AUDIO ASMR")
-                for f in data.get('frames', []):
-                    st.markdown(f"<span style='color:#00FFFF; font-size: 18px; font-weight: bold;'>► Frame {f['frame']} [{f['persen']}]</span>", unsafe_allow_html=True)
-                    st.markdown("<small style='color:lightgray;'>Salin Prompt Gambar (Midjourney/DALL-E):</small>", unsafe_allow_html=True)
-                    st.code(f['prompt_gambar'], language="text")
-                    st.markdown("<small style='color:lightgreen;'>Salin Prompt Audio ASMR (ElevenLabs/Suno):</small>", unsafe_allow_html=True)
-                    st.code(f['prompt_audio'], language="text")
-                    st.markdown("<hr style='border-color: #4B0082; margin: 10px 0;'>", unsafe_allow_html=True)
+            if response_text:
+                data = extract_json(response_text)
                 
-                st.markdown("<br>### 🎞️ VIDEO TRANSITIONS", unsafe_allow_html=True)
-                for t in data.get('transitions', []):
-                    st.markdown(f"<span style='color:#FF00FF; font-size: 16px; font-weight: bold;'>► Transisi {t['dari_frame']} ➔ {t['ke_frame']}</span>", unsafe_allow_html=True)
-                    st.code(t['prompt_video'], language="text")
+                monitor_space.empty()
+                
+                with col_center.container():
+                    st.markdown("### 📸 IMAGE KEYFRAMES & AUDIO ASMR")
+                    for f in data.get('frames', []):
+                        st.markdown(f"<span style='color:#00FFFF; font-size: 18px; font-weight: bold;'>► Frame {f['frame']} [{f['persen']}]</span>", unsafe_allow_html=True)
+                        st.markdown("<small style='color:lightgray;'>Salin Prompt Gambar (Midjourney/DALL-E):</small>", unsafe_allow_html=True)
+                        st.code(f['prompt_gambar'], language="text")
+                        st.markdown("<small style='color:lightgreen;'>Salin Prompt Audio ASMR (ElevenLabs/Suno):</small>", unsafe_allow_html=True)
+                        st.code(f['prompt_audio'], language="text")
+                        st.markdown("<hr style='border-color: #4B0082; margin: 10px 0;'>", unsafe_allow_html=True)
                     
+                    st.markdown("<br>### 🎞️ VIDEO TRANSITIONS", unsafe_allow_html=True)
+                    for t in data.get('transitions', []):
+                        st.markdown(f"<span style='color:#FF00FF; font-size: 16px; font-weight: bold;'>► Transisi {t['dari_frame']} ➔ {t['ke_frame']}</span>", unsafe_allow_html=True)
+                        st.code(t['prompt_video'], language="text")
+            else:
+                monitor_space.error("SERVER DISCONNECTED: Tidak ada model AI yang cocok dengan input ini.")
+                
         except Exception as e:
             monitor_space.error(f"FATAL ERROR: Pastikan API Key valid atau coba beberapa saat lagi. Detail: {e}")
