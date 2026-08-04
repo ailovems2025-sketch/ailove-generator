@@ -152,7 +152,7 @@ st.markdown(f"""
     <div style='text-align: center; margin-bottom: 30px;'>
         {logo_html}
         <h1 style='margin-bottom: 0px;'>AiLove Generator</h1>
-        <p style='color: #00FFFF; font-family: monospace; font-size: 14px; letter-spacing: 3px; margin-top: 5px;'>VERSION 1.2 BETA - VEO 3.1 OPTIMIZED</p>
+        <p style='color: #00FFFF; font-family: monospace; font-size: 14px; letter-spacing: 3px; margin-top: 5px;'>VERSION 1.3 BETA - STRICT TIMELAPSE VEO 3.1</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -181,7 +181,7 @@ with col_center:
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. LOGIKA AI & GENERASI
+# 5. LOGIKA AI & GENERASI (KUNCI KONSISTENSI)
 # ==========================================
 if generate_btn:
     if not api_key:
@@ -194,22 +194,22 @@ if generate_btn:
         monitor_space.markdown("""
             <div style='margin-top: 50px;'>
                 <div class='bulb-glow'>💡</div>
-                <div class='status-text'>PROCESSING AI TIMELAPSE NEURAL NETWORK...</div>
+                <div class='status-text'>PROCESSING STRICT TIMELAPSE NEURAL NETWORK...</div>
             </div>
         """, unsafe_allow_html=True)
         
         try:
             genai.configure(api_key=api_key)
             
-            # PERBAIKAN: Menggabungkan instruksi audio ke dalam prompt video untuk Veo 3.1
+            # PERBAIKAN: Instruksi sangat ketat agar video stop motion tidak melenceng strukturnya
             system_instruction = f"""
-            Kamu adalah sutradara AI yang sangat ketat dan logis. Pecah proses pembangunan menjadi {num_frames} frame.
-            Frame 1 = 0%, Frame {num_frames} = 100%. Hitung persentase secara merata.
+            Kamu adalah sutradara AI yang sangat logis. Pecah proses pembangunan menjadi {num_frames} frame (0% hingga 100%).
 
             ATURAN KONSISTENSI MUTLAK:
-            1. Tentukan SATU sudut kamera, SATU kondisi pencahayaan, dan SATU latar belakang lingkungan (tidak boleh berubah).
-            2. Gunakan gaya bahasa deskriptif untuk Midjourney pada 'prompt_gambar', dan pastikan diakhiri dengan --ar {rasio}
-            3. PROMPT VIDEO & AUDIO UNTUK VEO 3.1: Untuk bagian transisi (video), gabungkan instruksi visual dan audio ke dalam satu prompt bahasa Inggris yang dioptimalkan untuk Veo 3.1. Deskripsikan pergerakan kamera, aksi progres pembangunan yang sedang terjadi, DAN secara eksplisit tuliskan panduan audio ASMR-nya (contoh: "Cinematic pan right showing wooden logs being stacked rapidly. Ambient sound of a morning forest with birds chirping, accompanied by the clear ASMR sound of a hand saw cutting wood and a hammer hitting nails.").
+            1. 'prompt_gambar': Gunakan gaya bahasa untuk Midjourney (--ar {rasio}). SATU sudut kamera statis, latar belakang lingkungan identik di setiap frame.
+            2. 'prompt_video' (SANGAT PENTING): AI Video (Veo 3.1) sering merusak struktur. Untuk mencegahnya, kamu WAJIB memulai setiap prompt video dengan kalimat bahasa Inggris ini secara persis: "Fixed locked camera, time-lapse stop-motion style, perfectly interpolating from the starting frame to the ending frame while maintaining exact structural integrity, lighting, and background."
+            3. Setelah kalimat wajib tersebut, deskripsikan BAGAIMANA material bertambah/muncul secara ajaib ke posisinya. (contoh: "...Wooden planks rapidly snapping into place building the walls.")
+            4. Akhiri prompt video dengan instruksi ASMR. (contoh: "Audio: ASMR clear sounds of drilling, hammering wood, and ambient nature.")
             
             BALAS HANYA DENGAN JSON:
             {{
@@ -217,7 +217,7 @@ if generate_btn:
                 {{"frame": 1, "persen": "0%", "prompt_gambar": "prompt gambar statis untuk Midjourney..."}}
               ],
               "transitions": [
-                {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "Prompt video Veo 3.1 yang berisi visual transisi sekaligus deskripsi audio ASMR..."}}
+                {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "Fixed locked camera, time-lapse stop-motion style, perfectly interpolating from the starting frame to the ending frame while maintaining exact structural integrity, lighting, and background. [deskripsikan material yang muncul/tersusun]. Audio: ASMR [deskripsi suara keras konstruksi & alam]."}}
               ]
             }}
             """
@@ -256,10 +256,10 @@ if generate_btn:
                         st.code(f['prompt_gambar'], language="text")
                         st.markdown("<hr style='border-color: #4B0082; margin: 10px 0;'>", unsafe_allow_html=True)
                     
-                    st.markdown("<br>### 🎞️ VIDEO & AUDIO TRANSITIONS (VEO 3.1)", unsafe_allow_html=True)
+                    st.markdown("<br>### 🎞️ STRICT TIMELAPSE VIDEO (VEO 3.1)", unsafe_allow_html=True)
                     for t in data.get('transitions', []):
                         st.markdown(f"<span style='color:#FF00FF; font-size: 16px; font-weight: bold;'>► Transisi {t['dari_frame']} ➔ {t['ke_frame']}</span>", unsafe_allow_html=True)
-                        st.markdown("<small style='color:lightgreen;'>Salin Prompt Visual + Audio (Veo 3.1):</small>", unsafe_allow_html=True)
+                        st.markdown("<small style='color:lightgreen;'>Salin Prompt Kunci Kamera & Audio (Veo 3.1):</small>", unsafe_allow_html=True)
                         st.code(t['prompt_video'], language="text")
                         st.markdown("<br>", unsafe_allow_html=True)
             else:
