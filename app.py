@@ -152,7 +152,7 @@ st.markdown(f"""
     <div style='text-align: center; margin-bottom: 30px;'>
         {logo_html}
         <h1 style='margin-bottom: 0px;'>AiLove Generator</h1>
-        <p style='color: #00FFFF; font-family: monospace; font-size: 14px; letter-spacing: 3px; margin-top: 5px;'>VERSION 1.3 BETA - STRICT TIMELAPSE VEO 3.1</p>
+        <p style='color: #00FFFF; font-family: monospace; font-size: 14px; letter-spacing: 3px; margin-top: 5px;'>VERSION 1.4 BETA - ULTRA DETAILED VEO 3.1</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -181,7 +181,7 @@ with col_center:
     """, unsafe_allow_html=True)
 
 # ==========================================
-# 5. LOGIKA AI & GENERASI (KUNCI KONSISTENSI)
+# 5. LOGIKA AI & GENERASI (TEMPLATE DINAMIS)
 # ==========================================
 if generate_btn:
     if not api_key:
@@ -194,30 +194,40 @@ if generate_btn:
         monitor_space.markdown("""
             <div style='margin-top: 50px;'>
                 <div class='bulb-glow'>💡</div>
-                <div class='status-text'>PROCESSING STRICT TIMELAPSE NEURAL NETWORK...</div>
+                <div class='status-text'>PROCESSING ULTRA-REALISTIC TIMELAPSE...</div>
             </div>
         """, unsafe_allow_html=True)
         
         try:
             genai.configure(api_key=api_key)
             
-            # PERBAIKAN: Instruksi sangat ketat agar video stop motion tidak melenceng strukturnya
+            # PERBAIKAN: Menanamkan Template Ultra-Realistis ke dalam logika pembagian Frame
             system_instruction = f"""
             Kamu adalah sutradara AI yang sangat logis. Pecah proses pembangunan menjadi {num_frames} frame (0% hingga 100%).
 
             ATURAN KONSISTENSI MUTLAK:
-            1. 'prompt_gambar': Gunakan gaya bahasa untuk Midjourney (--ar {rasio}). SATU sudut kamera statis, latar belakang lingkungan identik di setiap frame.
-            2. 'prompt_video' (SANGAT PENTING): AI Video (Veo 3.1) sering merusak struktur. Untuk mencegahnya, kamu WAJIB memulai setiap prompt video dengan kalimat bahasa Inggris ini secara persis: "Fixed locked camera, time-lapse stop-motion style, perfectly interpolating from the starting frame to the ending frame while maintaining exact structural integrity, lighting, and background."
-            3. Setelah kalimat wajib tersebut, deskripsikan BAGAIMANA material bertambah/muncul secara ajaib ke posisinya. (contoh: "...Wooden planks rapidly snapping into place building the walls.")
-            4. Akhiri prompt video dengan instruksi ASMR. (contoh: "Audio: ASMR clear sounds of drilling, hammering wood, and ambient nature.")
-            
+            1. 'prompt_gambar': Gunakan gaya Midjourney (--ar {rasio}). Kamera statis dan lingkungan harus identik.
+            2. 'prompt_video': WAJIB gunakan TEMPLATE BAHASA INGGRIS di bawah ini untuk SETIAP transisi. Isi bagian dalam kurung siku [...] DENGAN SPESIFIK HANYA UNTUK PERSENTASE TAHAPAN TERSEBUT.
+
+            TEMPLATE PROMPT VIDEO (Patuhi format ini, jangan buat format sendiri):
+            Create an ultra-realistic cinematic construction timelapse showing the specific construction stage of a [JENIS BANGUNAN].
+            Construction stage currently in progress: [JELASKAN TAHAPAN SPESIFIK UNTUK FRAME INI. Misal jika awal: laying foundation. Jika tengah: framing walls].
+            Workers: [JUMLAH] professional construction workers wearing complete PPE.
+            Materials: [MATERIAL SPESIFIK PADA TAHAP INI].
+            Equipment: [PERALATAN SPESIFIK PADA TAHAP INI].
+            Camera: fixed locked camera interpolating from start to end frame to maintain strict structural integrity, combined with cinematic timelapse lighting and atmosphere.
+            Environment: realistic weather changes, moving clouds, dust, changing light, authentic construction atmosphere.
+            Audio: high-quality ASMR construction sounds only, synchronized with every activity: [SUARA ASMR SPESIFIK TAHAP INI, misal: hammering, pouring concrete, wind, birds, natural ambient sounds].
+            No music. No narration. No subtitles. No text. No watermark.
+            Photorealistic, 8K HDR, physically accurate lighting, highly detailed textures, engineering accurate workflow, documentary filmmaking style.
+
             BALAS HANYA DENGAN JSON:
             {{
               "frames": [
                 {{"frame": 1, "persen": "0%", "prompt_gambar": "prompt gambar statis untuk Midjourney..."}}
               ],
               "transitions": [
-                {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "Fixed locked camera, time-lapse stop-motion style, perfectly interpolating from the starting frame to the ending frame while maintaining exact structural integrity, lighting, and background. [deskripsikan material yang muncul/tersusun]. Audio: ASMR [deskripsi suara keras konstruksi & alam]."}}
+                {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "[ISI FULL TEMPLATE DI ATAS YANG SUDAH DILENGKAPI DATA]"}}
               ]
             }}
             """
@@ -256,7 +266,7 @@ if generate_btn:
                         st.code(f['prompt_gambar'], language="text")
                         st.markdown("<hr style='border-color: #4B0082; margin: 10px 0;'>", unsafe_allow_html=True)
                     
-                    st.markdown("<br>### 🎞️ STRICT TIMELAPSE VIDEO (VEO 3.1)", unsafe_allow_html=True)
+                    st.markdown("<br>### 🎞️ ULTRA-DETAILED VIDEO (VEO 3.1)", unsafe_allow_html=True)
                     for t in data.get('transitions', []):
                         st.markdown(f"<span style='color:#FF00FF; font-size: 16px; font-weight: bold;'>► Transisi {t['dari_frame']} ➔ {t['ke_frame']}</span>", unsafe_allow_html=True)
                         st.markdown("<small style='color:lightgreen;'>Salin Prompt Kunci Kamera & Audio (Veo 3.1):</small>", unsafe_allow_html=True)
