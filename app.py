@@ -59,12 +59,14 @@ custom_css = f"""
     
     h1, h2, h3, h4 {{ color: #00FFFF !important; text-align: center; }}
     
-    /* Input Styling */
-    .stTextArea>div>div>textarea, .stTextInput>div>div>input {{ 
-        background-color: #F0F8FF !important; 
+    /* PERBAIKAN WARNA TEKS INPUT */
+    .stTextArea textarea, .stTextInput input {{ 
+        background-color: #FFFFFF !important; 
         color: #000000 !important; 
+        -webkit-text-fill-color: #000000 !important;
         border: 2px solid #00FFFF !important; 
-        font-weight: bold !important;
+        font-weight: 900 !important;
+        font-size: 16px !important;
     }}
     
     div[data-testid="stForm"] {{ border: none !important; background: transparent !important; padding: 0 !important; }}
@@ -155,7 +157,6 @@ with st.form("main_input_form"):
 # ==========================================
 # 5. AREA MONITOR & LOGIKA GENERASI
 # ==========================================
-# Membuat penampung untuk animasi roda gigi di tengah layar (di bawah tombol)
 monitor_space = st.empty()
 monitor_space.markdown("""
     <div style='text-align: center; margin-top: 30px; margin-bottom: 30px;'>
@@ -170,7 +171,6 @@ if submit_btn:
     elif not ide_teks and not foto_akhir:
         monitor_space.error("SYSTEM ERROR: Masukan Ide atau Gambar tidak boleh kosong!")
     else:
-        # MENGAKTIFKAN ANIMASI RODA GIGI BERPUTAR SAAT LOADING
         monitor_space.markdown("""
             <div style='text-align: center; margin-top: 30px; margin-bottom: 30px;'>
                 <div class='gear-spinning'>⚙️</div>
@@ -185,26 +185,31 @@ if submit_btn:
             if karakter:
                 char_instruction = f"CHARACTER LOCK AKTIF: WAJIB sertakan deskripsi visual karakter ini di setiap frame dan transisi video: '{karakter}'. Karakter ini harus terlihat sedang melakukan aksi pembangunan."
             
+            # PERBAIKAN: Instruksi Gambar Dibuat Jauh Lebih Ketat & Detail
             system_instruction = f"""
             Kamu adalah sutradara AI logis. Pecah proses pembangunan menjadi {num_frames} frame (0% hingga 100%).
             {char_instruction}
 
-            ATURAN:
-            1. 'prompt_gambar': Gaya Midjourney (--ar {rasio}). Kamera statis dan lingkungan identik.
-            2. 'prompt_video': Gunakan template ini persis:
+            ATURAN KONSISTENSI MUTLAK:
+            1. 'prompt_gambar': WAJIB SANGAT DETAIL dalam Bahasa Inggris. Deskripsikan secara spesifik wujud progres bangunan pada tahap ini (material, bentuk, kondisi lahan). 
+            Kamu HARUS mengunci: "Fixed static wide camera angle, exact same environment background, perfectly consistent lighting." 
+            Kualitas: "ultra-realistic, 8k, architectural photography, photorealistic". 
+            Akhiri prompt gambar persis dengan parameter: --ar {rasio} --v 6.0 --style raw
+
+            2. 'prompt_video': Gunakan template ini persis (Bahasa Inggris):
             Create an ultra-realistic cinematic construction timelapse showing the specific construction stage of a [JENIS BANGUNAN].
-            Construction stage currently in progress: [JELASKAN TAHAPAN].
+            Construction stage currently in progress: [JELASKAN TAHAPAN SPESIFIK SAAT INI].
             Workers: {f'[CHARACTER LOCK: {karakter}]' if karakter else '[JUMLAH pekerja]'} performing the task.
-            Materials: [MATERIAL]. Equipment: [PERALATAN].
+            Materials: [MATERIAL TAHAP INI]. Equipment: [PERALATAN TAHAP INI].
             Camera: fixed locked camera interpolating from start to end frame to maintain strict structural integrity.
-            Environment: realistic weather changes.
+            Environment: realistic weather changes, moving clouds, authentic construction atmosphere.
             Audio: high-quality ASMR construction sounds only: [SUARA ASMR SPESIFIK TAHAP INI].
             No music. No narration. No text. Photorealistic, 8K HDR.
 
             BALAS HANYA DENGAN JSON:
             {{
               "frames": [
-                {{"frame": 1, "prompt_gambar": "prompt..."}}
+                {{"frame": 1, "persen": "0%", "prompt_gambar": "Prompt bahasa Inggris yang sangat panjang, deskriptif, detail, menjaga konsistensi kamera, diakhiri --ar..."}}
               ],
               "transitions": [
                 {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "prompt template lengkap..."}}
@@ -232,16 +237,16 @@ if submit_btn:
             if response_text:
                 data = extract_json(response_text)
                 
-                # MENGHAPUS RODA GIGI BERPUTAR SETELAH SELESAI
                 monitor_space.empty()
                 
-                # TAMPILAN OUTPUT
                 col_out_left, col_out_right = st.columns(2, gap="large")
                 
                 with col_out_left:
                     st.markdown("### PROMPT IMAGE")
                     for f in data.get('frames', []):
-                        st.markdown(f"**Frame {f['frame']}**")
+                        # Menambahkan indikator Persen kembali agar jelas
+                        persen = f.get('persen', '')
+                        st.markdown(f"**Frame {f['frame']} [{persen}]**")
                         st.code(f['prompt_gambar'], language="text")
                 
                 with col_out_right:
@@ -252,6 +257,9 @@ if submit_btn:
                         
             else:
                 monitor_space.error("Gagal terhubung ke model AI. Coba lagi.")
+                
+        except Exception as e:
+            monitor_space.error(f"Error: Pastikan API Key valid. Detail: {e}")
                 
         except Exception as e:
             monitor_space.error(f"Error: Pastikan API Key valid. Detail: {e}")
