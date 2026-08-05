@@ -81,6 +81,27 @@ custom_css = f"""
     }}
     
     div[data-testid="stCodeBlock"] {{ background-color: rgba(10, 10, 25, 0.9) !important; border: 1px solid #00FFFF; }}
+    
+    /* ANIMASI RODA GIGI BERPUTAR */
+    @keyframes spin {{ 100% {{ transform: rotate(360deg); }} }}
+    
+    .gear-standby {{
+        font-size: 80px;
+        text-align: center;
+        filter: grayscale(100%) brightness(50%);
+        opacity: 0.5;
+        display: inline-block;
+    }}
+    
+    .gear-spinning {{
+        font-size: 100px;
+        text-align: center;
+        display: inline-block;
+        animation: spin 2s linear infinite;
+        text-shadow: 0 0 30px #00FFFF, 0 0 60px #8A2BE2;
+    }}
+    
+    .status-text {{ text-align: center; color: #00FFFF; font-family: monospace; font-size: 18px; margin-top: 10px; }}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -96,15 +117,14 @@ def extract_json(text):
     return json.loads(text)
 
 # ==========================================
-# 4. TATA LETAK INPUT (SESUAI GAMBAR)
+# 4. TATA LETAK INPUT
 # ==========================================
 st.markdown("<h1>⚙️ AiLove Generator Pro</h1>", unsafe_allow_html=True)
 
-# Sesi penyimpanan API Key sementara
 if "saved_api_key" not in st.session_state:
     st.session_state.saved_api_key = ""
 
-api_input = st.text_input("🔑 API Key Token (Gunakan fitur 'Save Password' di browser Anda)", type="password", value=st.session_state.saved_api_key)
+api_input = st.text_input("🔑 API Key Token (Gunakan fitur 'Save Password' di browser)", type="password", value=st.session_state.saved_api_key)
 if api_input:
     st.session_state.saved_api_key = api_input
 
@@ -133,20 +153,34 @@ with st.form("main_input_form"):
     submit_btn = st.form_submit_button("GENERATE PROMPTS 🚀")
 
 # ==========================================
-# 5. LOGIKA GENERASI & OUTPUT DUA KOLOM
+# 5. AREA MONITOR & LOGIKA GENERASI
 # ==========================================
+# Membuat penampung untuk animasi roda gigi di tengah layar (di bawah tombol)
+monitor_space = st.empty()
+monitor_space.markdown("""
+    <div style='text-align: center; margin-top: 30px; margin-bottom: 30px;'>
+        <div class='gear-standby'>⚙️</div>
+        <div class='status-text' style='color: gray;'>SYSTEM STANDBY...</div>
+    </div>
+""", unsafe_allow_html=True)
+
 if submit_btn:
     if not st.session_state.saved_api_key:
-        st.error("SYSTEM ERROR: API Key belum dimasukkan!")
+        monitor_space.error("SYSTEM ERROR: API Key belum dimasukkan!")
     elif not ide_teks and not foto_akhir:
-        st.error("SYSTEM ERROR: Masukan Ide atau Gambar tidak boleh kosong!")
+        monitor_space.error("SYSTEM ERROR: Masukan Ide atau Gambar tidak boleh kosong!")
     else:
-        st.info("Memproses Jaringan Neural AI... Mohon tunggu.")
+        # MENGAKTIFKAN ANIMASI RODA GIGI BERPUTAR SAAT LOADING
+        monitor_space.markdown("""
+            <div style='text-align: center; margin-top: 30px; margin-bottom: 30px;'>
+                <div class='gear-spinning'>⚙️</div>
+                <div class='status-text'>PROCESSING NEURAL NETWORK...</div>
+            </div>
+        """, unsafe_allow_html=True)
         
         try:
             genai.configure(api_key=st.session_state.saved_api_key)
             
-            # Logika Character Lock
             char_instruction = ""
             if karakter:
                 char_instruction = f"CHARACTER LOCK AKTIF: WAJIB sertakan deskripsi visual karakter ini di setiap frame dan transisi video: '{karakter}'. Karakter ini harus terlihat sedang melakukan aksi pembangunan."
@@ -198,7 +232,10 @@ if submit_btn:
             if response_text:
                 data = extract_json(response_text)
                 
-                # TATA LETAK OUTPUT (KIRI GAMBAR, KANAN VIDEO)
+                # MENGHAPUS RODA GIGI BERPUTAR SETELAH SELESAI
+                monitor_space.empty()
+                
+                # TAMPILAN OUTPUT
                 col_out_left, col_out_right = st.columns(2, gap="large")
                 
                 with col_out_left:
@@ -214,7 +251,7 @@ if submit_btn:
                         st.code(t['prompt_video'], language="text")
                         
             else:
-                st.error("Gagal terhubung ke model AI. Coba lagi.")
+                monitor_space.error("Gagal terhubung ke model AI. Coba lagi.")
                 
         except Exception as e:
-            st.error(f"Error: Pastikan API Key valid. Detail: {e}")
+            monitor_space.error(f"Error: Pastikan API Key valid. Detail: {e}")
