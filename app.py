@@ -3,21 +3,20 @@ import google.generativeai as genai
 import json
 import re
 import base64
-import os
 from PIL import Image
 
 # ==========================================
 # 1. KONFIGURASI HALAMAN
 # ==========================================
 st.set_page_config(
-    page_title="AiLove Generator - Beta",
+    page_title="AiLove Generator - Pro",
     page_icon="⚙️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
 # ==========================================
-# 2. INJEKSI BACKGROUND, LOGO & CSS KUSTOM
+# 2. INJEKSI BACKGROUND & CSS KUSTOM
 # ==========================================
 def get_base64_of_bin_file(bin_file):
     try:
@@ -35,9 +34,6 @@ if bg_base64:
 else:
     bg_css = "background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);"
 
-logo_file = "Logo App.png"
-logo_base64 = get_base64_of_bin_file(logo_file)
-
 custom_css = f"""
 <style>
     [data-testid="collapsedControl"] {{ display: none; }}
@@ -49,83 +45,42 @@ custom_css = f"""
         background-position: center;
         background-attachment: fixed;
         color: #E0E0FF;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }}
     
+    /* Box Styling */
     div[data-testid="column"] {{
-        background: rgba(20, 20, 35, 0.4);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(100, 150, 255, 0.3);
-        border-radius: 20px;
-        padding: 20px;
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        background: rgba(20, 20, 35, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 15px;
     }}
     
-    h1, h2, h3 {{ color: #00FFFF !important; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }}
-    p, label {{ color: #B0C4DE !important; font-weight: bold; }}
+    h1, h2, h3, h4 {{ color: #00FFFF !important; text-align: center; }}
     
-    .stTextArea>div>div>textarea {{ 
+    /* Input Styling */
+    .stTextArea>div>div>textarea, .stTextInput>div>div>input {{ 
         background-color: #F0F8FF !important; 
         color: #000000 !important; 
         border: 2px solid #00FFFF !important; 
         font-weight: bold !important;
-        font-size: 16px !important;
     }}
     
-    .stTextInput>div>div>input {{ 
-        background-color: rgba(0,0,0,0.5) !important; 
-        color: #00FFFF !important; 
-        border: 1px solid #4B0082 !important; 
-    }}
-    
-    div[data-testid="stForm"] {{
-        border: none !important;
-        background: transparent !important;
-        padding: 0 !important;
-    }}
+    div[data-testid="stForm"] {{ border: none !important; background: transparent !important; padding: 0 !important; }}
 
+    /* Button Styling */
     .stButton>button {{ 
-        background: linear-gradient(90deg, #4B0082 0%, #8A2BE2 100%) !important; 
+        background: linear-gradient(90deg, #4B0082 0%, #00FFFF 100%) !important; 
         color: white !important; 
-        border: 1px solid #00FFFF; 
-        border-radius: 10px; 
         font-weight: bold; 
         width: 100%; 
         padding: 15px;
-        box-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
-        transition: 0.3s;
-        margin-top: 15px;
-    }}
-    .stButton>button:hover {{ 
-        box-shadow: 0 0 25px rgba(0, 255, 255, 0.8); 
-        border: 1px solid #FF00FF;
+        border-radius: 10px;
+        border: none;
     }}
     
-    div[data-testid="stCodeBlock"] {{ 
-        background-color: rgba(10, 10, 25, 0.9) !important; 
-        border: 1px solid #00FFFF; 
-        border-radius: 8px; 
-    }}
-    
-    .bulb-dim {{
-        font-size: 80px;
-        text-align: center;
-        filter: grayscale(100%) brightness(50%);
-        opacity: 0.5;
-        transition: 0.5s;
-    }}
-    .bulb-glow {{
-        font-size: 100px;
-        text-align: center;
-        text-shadow: 0 0 30px #00FFFF, 0 0 60px #8A2BE2;
-        animation: pulse 1s infinite alternate;
-    }}
-    @keyframes pulse {{
-        0% {{ opacity: 0.8; transform: scale(0.95); text-shadow: 0 0 20px #00FFFF; }}
-        100% {{ opacity: 1; transform: scale(1.05); text-shadow: 0 0 50px #00FFFF, 0 0 80px #FF00FF; }}
-    }}
-    .status-text {{ text-align: center; color: #00FFFF; font-family: monospace; font-size: 18px; margin-top: 10px; }}
+    div[data-testid="stCodeBlock"] {{ background-color: rgba(10, 10, 25, 0.9) !important; border: 1px solid #00FFFF; }}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -141,93 +96,84 @@ def extract_json(text):
     return json.loads(text)
 
 # ==========================================
-# 4. TATA LETAK UTAMA (HEADER & GRID)
+# 4. TATA LETAK INPUT (SESUAI GAMBAR)
 # ==========================================
-if logo_base64:
-    logo_html = f"<img src='data:image/png;base64,{logo_base64}' width='120' style='margin-bottom: 10px; filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.3));'>"
-else:
-    logo_html = "<h1 style='font-size: 60px;'>⚙️</h1>"
+st.markdown("<h1>⚙️ AiLove Generator Pro</h1>", unsafe_allow_html=True)
 
-st.markdown(f"""
-    <div style='text-align: center; margin-bottom: 30px;'>
-        {logo_html}
-        <h1 style='margin-bottom: 0px;'>AiLove Generator</h1>
-        <p style='color: #00FFFF; font-family: monospace; font-size: 14px; letter-spacing: 3px; margin-top: 5px;'>VERSION 1.4 BETA - ULTRA DETAILED VEO 3.1</p>
-    </div>
-""", unsafe_allow_html=True)
+# Sesi penyimpanan API Key sementara
+if "saved_api_key" not in st.session_state:
+    st.session_state.saved_api_key = ""
 
-col_left, col_center, col_right = st.columns([1.2, 2.5, 1.2], gap="large")
+api_input = st.text_input("🔑 API Key Token (Gunakan fitur 'Save Password' di browser Anda)", type="password", value=st.session_state.saved_api_key)
+if api_input:
+    st.session_state.saved_api_key = api_input
 
-with col_left:
-    st.markdown("### 🎛️ DATA INPUT")
-    api_key = st.text_input("🔑 API Key Token", type="password")
-    ide_teks = st.text_area("📝 Parameter Proyek", height=150, placeholder="Masukkan ide atau konsep bangunan... (Teks hitam)")
+with st.form("main_input_form"):
+    col_in_left, col_in_right = st.columns(2, gap="large")
+    
+    with col_in_left:
+        st.markdown("#### JUMLAH FRAME")
+        num_frames = st.slider("Target Frames", min_value=2, max_value=10, value=5, label_visibility="collapsed")
+        
+        st.markdown("#### MASUKAN IDE")
+        ide_teks = st.text_area("Contoh: Dimulai dari lahan kosong menjadi rumah mewah", height=120, label_visibility="collapsed")
+        
+        st.markdown("#### KARAKTER LOCK (Opsional)")
+        karakter = st.text_input("Contoh: Pria berjaket kuning dan topi helm proyek", label_visibility="collapsed")
 
-with col_right:
-    st.markdown("### ⚙️ SYSTEM CONTROL")
-    with st.form("kontrol_form"):
-        rasio = st.selectbox("📺 Aspek Rasio", ["16:9", "9:16", "4:3", "1:1"])
-        num_frames = st.slider("Target Frames (0-100%)", min_value=2, max_value=10, value=5)
-        foto_akhir = st.file_uploader("🖼️ Visual Override (Opsional)", type=['jpg', 'jpeg', 'png'])
-        generate_btn = st.form_submit_button("INITIATE GENERATOR 🚀")
+    with col_in_right:
+        st.markdown("#### ASPEK RASIO")
+        rasio = st.selectbox("Pilih Rasio", ["16:9", "9:16", "4:3", "1:1"], label_visibility="collapsed")
+        
+        st.markdown("#### VISUAL OVERRIDE (Preview)")
+        foto_akhir = st.file_uploader("Unggah referensi hasil akhir", type=['jpg', 'jpeg', 'png'], label_visibility="collapsed")
+        if foto_akhir:
+            st.image(foto_akhir, caption="Preview Gambar Referensi", use_column_width=True)
 
-with col_center:
-    monitor_space = st.empty()
-    monitor_space.markdown("""
-        <div style='margin-top: 50px;'>
-            <div class='bulb-dim'>💡</div>
-            <div class='status-text' style='color: gray;'>SYSTEM STANDBY...</div>
-        </div>
-    """, unsafe_allow_html=True)
+    submit_btn = st.form_submit_button("GENERATE PROMPTS 🚀")
 
 # ==========================================
-# 5. LOGIKA AI & GENERASI (TEMPLATE DINAMIS)
+# 5. LOGIKA GENERASI & OUTPUT DUA KOLOM
 # ==========================================
-if generate_btn:
-    if not api_key:
-        with col_center:
-            st.error("SYSTEM ERROR: API Key Missing!")
+if submit_btn:
+    if not st.session_state.saved_api_key:
+        st.error("SYSTEM ERROR: API Key belum dimasukkan!")
     elif not ide_teks and not foto_akhir:
-        with col_center:
-            st.error("SYSTEM ERROR: Input Data Empty!")
+        st.error("SYSTEM ERROR: Masukan Ide atau Gambar tidak boleh kosong!")
     else:
-        monitor_space.markdown("""
-            <div style='margin-top: 50px;'>
-                <div class='bulb-glow'>💡</div>
-                <div class='status-text'>PROCESSING ULTRA-REALISTIC TIMELAPSE...</div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.info("Memproses Jaringan Neural AI... Mohon tunggu.")
         
         try:
-            genai.configure(api_key=api_key)
+            genai.configure(api_key=st.session_state.saved_api_key)
             
-            # PERBAIKAN: Menanamkan Template Ultra-Realistis ke dalam logika pembagian Frame
+            # Logika Character Lock
+            char_instruction = ""
+            if karakter:
+                char_instruction = f"CHARACTER LOCK AKTIF: WAJIB sertakan deskripsi visual karakter ini di setiap frame dan transisi video: '{karakter}'. Karakter ini harus terlihat sedang melakukan aksi pembangunan."
+            
             system_instruction = f"""
-            Kamu adalah sutradara AI yang sangat logis. Pecah proses pembangunan menjadi {num_frames} frame (0% hingga 100%).
+            Kamu adalah sutradara AI logis. Pecah proses pembangunan menjadi {num_frames} frame (0% hingga 100%).
+            {char_instruction}
 
-            ATURAN KONSISTENSI MUTLAK:
-            1. 'prompt_gambar': Gunakan gaya Midjourney (--ar {rasio}). Kamera statis dan lingkungan harus identik.
-            2. 'prompt_video': WAJIB gunakan TEMPLATE BAHASA INGGRIS di bawah ini untuk SETIAP transisi. Isi bagian dalam kurung siku [...] DENGAN SPESIFIK HANYA UNTUK PERSENTASE TAHAPAN TERSEBUT.
-
-            TEMPLATE PROMPT VIDEO (Patuhi format ini, jangan buat format sendiri):
+            ATURAN:
+            1. 'prompt_gambar': Gaya Midjourney (--ar {rasio}). Kamera statis dan lingkungan identik.
+            2. 'prompt_video': Gunakan template ini persis:
             Create an ultra-realistic cinematic construction timelapse showing the specific construction stage of a [JENIS BANGUNAN].
-            Construction stage currently in progress: [JELASKAN TAHAPAN SPESIFIK UNTUK FRAME INI. Misal jika awal: laying foundation. Jika tengah: framing walls].
-            Workers: [JUMLAH] professional construction workers wearing complete PPE.
-            Materials: [MATERIAL SPESIFIK PADA TAHAP INI].
-            Equipment: [PERALATAN SPESIFIK PADA TAHAP INI].
-            Camera: fixed locked camera interpolating from start to end frame to maintain strict structural integrity, combined with cinematic timelapse lighting and atmosphere.
-            Environment: realistic weather changes, moving clouds, dust, changing light, authentic construction atmosphere.
-            Audio: high-quality ASMR construction sounds only, synchronized with every activity: [SUARA ASMR SPESIFIK TAHAP INI, misal: hammering, pouring concrete, wind, birds, natural ambient sounds].
-            No music. No narration. No subtitles. No text. No watermark.
-            Photorealistic, 8K HDR, physically accurate lighting, highly detailed textures, engineering accurate workflow, documentary filmmaking style.
+            Construction stage currently in progress: [JELASKAN TAHAPAN].
+            Workers: {f'[CHARACTER LOCK: {karakter}]' if karakter else '[JUMLAH pekerja]'} performing the task.
+            Materials: [MATERIAL]. Equipment: [PERALATAN].
+            Camera: fixed locked camera interpolating from start to end frame to maintain strict structural integrity.
+            Environment: realistic weather changes.
+            Audio: high-quality ASMR construction sounds only: [SUARA ASMR SPESIFIK TAHAP INI].
+            No music. No narration. No text. Photorealistic, 8K HDR.
 
             BALAS HANYA DENGAN JSON:
             {{
               "frames": [
-                {{"frame": 1, "persen": "0%", "prompt_gambar": "prompt gambar statis untuk Midjourney..."}}
+                {{"frame": 1, "prompt_gambar": "prompt..."}}
               ],
               "transitions": [
-                {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "[ISI FULL TEMPLATE DI ATAS YANG SUDAH DILENGKAPI DATA]"}}
+                {{"dari_frame": 1, "ke_frame": 2, "prompt_video": "prompt template lengkap..."}}
               ]
             }}
             """
@@ -235,19 +181,15 @@ if generate_btn:
             input_data = [system_instruction]
             if ide_teks: input_data.append(f"Konsep: {ide_teks}")
             if foto_akhir:
-                input_data.append("Gunakan referensi gambar ini untuk wujud final Frame 100%.")
+                input_data.append("Gunakan gambar referensi ini untuk target wujud Frame 100%.")
                 input_data.append(Image.open(foto_akhir))
             
             response_text = None
-            
             for m in genai.list_models():
                 if 'generateContent' in m.supported_generation_methods:
                     try:
                         model = genai.GenerativeModel(m.name)
-                        response = model.generate_content(
-                            input_data,
-                            generation_config=genai.types.GenerationConfig(temperature=0.2)
-                        )
+                        response = model.generate_content(input_data, generation_config=genai.types.GenerationConfig(temperature=0.2))
                         response_text = response.text
                         break 
                     except Exception:
@@ -256,24 +198,23 @@ if generate_btn:
             if response_text:
                 data = extract_json(response_text)
                 
-                monitor_space.empty()
+                # TATA LETAK OUTPUT (KIRI GAMBAR, KANAN VIDEO)
+                col_out_left, col_out_right = st.columns(2, gap="large")
                 
-                with col_center.container():
-                    st.markdown("### 📸 IMAGE KEYFRAMES (MIDJOURNEY)")
+                with col_out_left:
+                    st.markdown("### PROMPT IMAGE")
                     for f in data.get('frames', []):
-                        st.markdown(f"<span style='color:#00FFFF; font-size: 18px; font-weight: bold;'>► Frame {f['frame']} [{f['persen']}]</span>", unsafe_allow_html=True)
-                        st.markdown("<small style='color:lightgray;'>Salin Prompt Gambar:</small>", unsafe_allow_html=True)
+                        st.markdown(f"**Frame {f['frame']}**")
                         st.code(f['prompt_gambar'], language="text")
-                        st.markdown("<hr style='border-color: #4B0082; margin: 10px 0;'>", unsafe_allow_html=True)
-                    
-                    st.markdown("<br>### 🎞️ ULTRA-DETAILED VIDEO (VEO 3.1)", unsafe_allow_html=True)
+                
+                with col_out_right:
+                    st.markdown("### PROMPT VIDEO")
                     for t in data.get('transitions', []):
-                        st.markdown(f"<span style='color:#FF00FF; font-size: 16px; font-weight: bold;'>► Transisi {t['dari_frame']} ➔ {t['ke_frame']}</span>", unsafe_allow_html=True)
-                        st.markdown("<small style='color:lightgreen;'>Salin Prompt Kunci Kamera & Audio (Veo 3.1):</small>", unsafe_allow_html=True)
+                        st.markdown(f"**Transisi {t['dari_frame']} ➔ {t['ke_frame']}**")
                         st.code(t['prompt_video'], language="text")
-                        st.markdown("<br>", unsafe_allow_html=True)
+                        
             else:
-                monitor_space.error("SERVER DISCONNECTED: Tidak ada model AI yang cocok dengan input ini.")
+                st.error("Gagal terhubung ke model AI. Coba lagi.")
                 
         except Exception as e:
-            monitor_space.error(f"FATAL ERROR: Pastikan API Key valid atau coba beberapa saat lagi. Detail: {e}")
+            st.error(f"Error: Pastikan API Key valid. Detail: {e}")
